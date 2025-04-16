@@ -9,14 +9,9 @@ env:
 
 phases:
   install:
-    runtime-versions:
-      python: 3.9
     commands:
       - echo "📂 Entering HVAC_Model directory"
       - cd HVAC_Model
-      - echo "🔧 Upgrading pip and installing requirements"
-      - pip install --upgrade pip
-      - pip install -r requirements.txt
 
   build:
     commands:
@@ -31,7 +26,7 @@ phases:
           --output-data-config '{"S3OutputPath":"'"$MODEL_ARTIFACTS_S3"'"}' \
           --resource-config '{"InstanceType":"ml.m5.xlarge","InstanceCount":1,"VolumeSizeInGB":10}'
       - |
-        echo "⏳ Waiting for training to finish"
+        echo "⏳ Waiting for training to complete"
         aws sagemaker wait training-job-completed-or-stopped --training-job-name $JOB_NAME
       - |
         echo "📦 Creating new SageMaker model"
