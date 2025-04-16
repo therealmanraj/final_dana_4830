@@ -1,0 +1,45 @@
+Install and configure the EB CLI
+If you haven’t already, install the AWS Elastic Beanstalk CLI:
+
+bash
+Copy
+pip install awsebcli
+From your app’s root directory, initialize your EB project:
+
+bash
+Copy
+eb init -p docker hvac-dashboard --region ca-central-1
+-p docker tells EB you’re using a single‑container Docker platform.
+
+Choose the application name hvac-dashboard (or whatever you like).
+
+When prompted, say yes to create an SSH key if you ever want to SSH into the EC2.
+
+3. Create and deploy your environment
+Create a new environment (beanstalk will build your image, spin up EC2, attach load balancer, etc.):
+
+bash
+Copy
+eb create hvac-dashboard-env
+You can add flags like --instance_type t3.small or --scale 2 if needed.
+
+Monitor the deployment logs in your terminal. Once it ends with Environment health has transitioned to OK, you’re live.
+
+4. Access your app
+Run:
+
+bash
+Copy
+eb open
+This will open something like http://hvac-dashboard-env.eba-xxxxxx.ca-central-1.elasticbeanstalk.com.
+
+You can now hit that URL from any device—mobile or desktop.
+
+5. (Optional) Update your app
+Whenever you make changes locally:
+
+bash
+Copy
+# rebuild & redeploy
+eb deploy
+Elastic Beanstalk will push the new Docker image and restart your containers seamlessly.
