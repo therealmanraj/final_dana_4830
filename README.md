@@ -90,12 +90,12 @@ s3://<your-bucket>/
 ```
 .
 ├── HVAC_Model/
-│   ├── buildspec.yml       # CodeBuild spec
-│   ├── train.py            # Training script for local reference
-│   ├── inference.py        # SageMaker inference handler
-│   └── requirements.txt    # Python dependencies
-├── lambda_function.py      # Lambda handler for real-time inference
-├── build_train_deploy.ipynb # Jupyter notebook for training & deployment
+│   ├── buildspec.yml               # CodeBuild spec
+│   ├── train.py                    # Training script for local reference
+│   ├── inference.py                # SageMaker inference handler
+│   ├── lambda_function.py          # Lambda handler for real-time inference
+│   ├── build_train_deploy.ipynb    # Jupyter notebook for training & deployment
+│   └── requirements.txt            # Python dependencies
 └── README.md               # This documentation
 ```
 
