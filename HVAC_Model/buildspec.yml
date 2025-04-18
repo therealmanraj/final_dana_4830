@@ -2,16 +2,22 @@ version: 0.2
 
 env:
   variables:
+    S3_CODE_URI: "s3://dana-minicapstone-ca/code/hvac_source.tar.gz"
     S3_TRAINING_URI: "s3://dana-minicapstone-ca/training-data/"
     MODEL_ARTIFACTS_S3: "s3://dana-minicapstone-ca/model-artifacts/"
-    ENDPOINT_NAME: "sagemaker-scikit-learn-2025-04-16-03-57-33-651"
     IAM_ROLE_ARN: "arn:aws:iam::222634404112:role/SageMakerExecutionRole-ca"
 
 phases:
   install:
+    runtime-versions:
+      python: 3.9
     commands:
       - echo "📂 Entering HVAC_Model directory"
       - cd HVAC_Model
+      - echo "📦 Bundling training code"
+      - tar czf ../hvac_source.tar.gz . # bundle everything in HVAC_Model
+      - echo "☁️ Uploading code bundle to S3"
+      - aws s3 cp ../hvac_source.tar.gz $S3_CODE_URI
 
   build:
     commands:
@@ -20,14 +26,18 @@ phases:
         JOB_NAME=hvac-train-$(date +%s)
         aws sagemaker create-training-job \
           --training-job-name $JOB_NAME \
-          --algorithm-specification TrainingImage=341280168497.dkr.ecr.ca-central-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3,TrainingInputMode=File \
+          --algorithm-specification \
+             TrainingImage=683313688378.dkr.ecr.ca-central-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3,TrainingInputMode=File \
           --role-arn $IAM_ROLE_ARN \
+          --hyper-parameters \
+             SAGEMAKER_SUBMIT_DIRECTORY=$S3_CODE_URI, \
+             SAGEMAKER_PROGRAM=train.py \
           --input-data-config '[{"ChannelName":"train","DataSource":{"S3DataSource":{"S3DataType":"S3Prefix","S3Uri":"'"$S3_TRAINING_URI"'","S3DataDistributionType":"FullyReplicated"}}}]' \
           --output-data-config '{"S3OutputPath":"'"$MODEL_ARTIFACTS_S3"'"}' \
           --resource-config '{"InstanceType":"ml.m5.xlarge","InstanceCount":1,"VolumeSizeInGB":10}' \
           --stopping-condition MaxRuntimeInSeconds=3600
       - |
-        echo "⏳ Waiting for training to complete"
+        echo "⏳ Waiting for training to finish"
         aws sagemaker wait training-job-completed-or-stopped --training-job-name $JOB_NAME
       - |
         echo "📦 Creating new SageMaker model"
