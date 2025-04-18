@@ -9,7 +9,7 @@ s3_incoming_key = 'incoming/hvac_test.csv'
 s3_prediction_key = 'predictions/hvac_test.csv'
 s3 = boto3.client('s3', region_name=region)
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(ttl=30, show_spinner=False)
 def load_data():
     response_incoming = s3.get_object(Bucket=s3_bucket, Key=s3_incoming_key)
     response_prediction = s3.get_object(Bucket=s3_bucket, Key=s3_prediction_key)
