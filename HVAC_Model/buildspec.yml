@@ -25,35 +25,31 @@ phases:
         JOB_NAME=hvac-train-$(date +%s)
         aws sagemaker create-training-job \
           --training-job-name $JOB_NAME \
-          --algorithm-specification \
-        TrainingImage=683313688378.dkr.ecr.ca-central-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3,TrainingInputMode=File \
+          --algorithm-specification TrainingImage=683313688378.dkr.ecr.ca-central-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3,TrainingInputMode=File \
           --role-arn $IAM_ROLE_ARN \
           --input-data-config '[{"ChannelName":"train","DataSource":{"S3DataSource":{"S3DataType":"S3Prefix","S3Uri":"'"$S3_TRAINING_URI"'","S3DataDistributionType":"FullyReplicated"}}}]' \
           --output-data-config '{"S3OutputPath":"'"$MODEL_ARTIFACTS_S3"'"}' \
           --resource-config '{"InstanceType":"ml.m5.xlarge","InstanceCount":1,"VolumeSizeInGB":10}' \
           --stopping-condition StoppingCondition={MaxRuntimeInSeconds=3600}
+      - echo "⏳ Waiting for training to complete"
+      - aws sagemaker wait training-job-completed-or-stopped --training-job-name $JOB_NAME
+      - echo "📦 Creating SageMaker model"
       - |
-        echo "⏳ Waiting for training to complete"
-        aws sagemaker wait training-job-completed-or-stopped --training-job-name $JOB_NAME
-      - |
-        echo "📦 Creating SageMaker model"
         MODEL_NAME=hvac-model-$(date +%s)
         aws sagemaker create-model \
           --model-name $MODEL_NAME \
-          --primary-container \
-        Image=683313688378.dkr.ecr.ca-central-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3,ModelDataUrl=$MODEL_ARTIFACTS_S3$JOB_NAME/output/model.tar.gz \
+          --primary-container Image=683313688378.dkr.ecr.ca-central-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3,ModelDataUrl=$MODEL_ARTIFACTS_S3$JOB_NAME/output/model.tar.gz \
           --execution-role-arn $IAM_ROLE_ARN
+      - echo "⚙️ Creating endpoint config"
       - |
-        echo "⚙️ Creating endpoint config"
         ENDPOINT_CONFIG=hvac-endpoint-config-$(date +%s)
         aws sagemaker create-endpoint-config \
           --endpoint-config-name $ENDPOINT_CONFIG \
           --production-variants VariantName=AllTraffic,ModelName=$MODEL_NAME,InitialInstanceCount=1,InstanceType=ml.m5.large,InitialVariantWeight=1
-      - |
-        echo "🔄 Updating endpoint $ENDPOINT_NAME"
-        aws sagemaker update-endpoint \
-          --endpoint-name $ENDPOINT_NAME \
-          --endpoint-config-name $ENDPOINT_CONFIG
+      - echo "🔄 Updating endpoint $ENDPOINT_NAME"
+      - aws sagemaker update-endpoint \
+        --endpoint-name $ENDPOINT_NAME \
+        --endpoint-config-name $ENDPOINT_CONFIG
 
 artifacts:
   files:
